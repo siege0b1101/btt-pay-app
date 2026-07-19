@@ -73,7 +73,7 @@ const model = {
       console.log(e);
     }
   }),
-  register: thunk(async (actions, request, helper) => {
+  registerUser: thunk(async (actions, request, helper) => {
     const { setShowModal } = helper.getStoreActions();
 
     try {

@@ -6,7 +6,7 @@ import errorMessages from "../../util/errorMessages";
 const AddAccountCard = ({ type }) => {
   const userSession = useStoreState((state) => state.userSession);
   const { openAccount, setShowModal } = useStoreActions((action) => ({
-    openAccount: action.registerUser,
+    openAccount: action.openAccount,
     setShowModal: action.setShowModal,
   }));
 
