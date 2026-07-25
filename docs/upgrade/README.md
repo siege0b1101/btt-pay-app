@@ -69,3 +69,4 @@ This document outlines the upgrade plan for the BTT-Pay frontend application, fo
 | Version | Date Modified | Modified By | Contents |
 | ------- | ------------- | ----------- | -------- |
 | 1 | 2026/07/22 | Osaurus + Qwen Code | Initial draft |
+| 2 | 2026/07/22 | Pi + Me | Added more details for each Phases |

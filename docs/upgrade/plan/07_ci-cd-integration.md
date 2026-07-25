@@ -16,3 +16,6 @@ jobs:
       - run: npm run test -- --watch=false --coverage
       - run: npm run lint
 ```
+
+> **Note** 
+> Reference only for now. **DO NOT IMPLEMENT.**

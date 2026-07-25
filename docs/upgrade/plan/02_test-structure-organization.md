@@ -5,7 +5,6 @@
 ```
 src/
 ├── __tests__/
-│   ├── setupTests.js           # Global test setup
 │   ├── components/
 │   │   ├── general/
 │   │   │   ├── TextField.test.js
@@ -19,14 +18,21 @@ src/
 │   │       ├── PayBillsForm.test.js
 │   │       ├── TransferCoinsForm.test.js
 │   │       └── CashInForm.test.js
-│   └── pages/
-│       ├── Login.test.js
-│       ├── Register.test.js
-│       ├── Accounts.test.js
-│       └── Transactions.test.js
-├── __mocks__/
-│   └── api.js                  # Mock API responses
-└── utils/
-    ├── validations.test.js
-    └── regexPatterns.test.js
+│   ├── pages/
+│   │   ├── Login.test.js
+│   │   ├── Register.test.js
+│   │   ├── Accounts.test.js
+│   │   └── Transactions.test.js
+│   ├── hooks/
+│   │   └── useAuth.test.js
+│   ├── adapters/
+│   │   └── api.test.js
+│   ├── store/
+│   │   └── store.test.js
+│   └── utils/
+│       ├── validations.test.js
+│       └── regexPatterns.test.js
+├── setupTests.js           # Global test setup (CRA convention)
+└── __mocks__/
+    └── api.js              # Mock API responses
 ```
