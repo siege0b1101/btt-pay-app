@@ -1,4 +1,4 @@
-# Phase 6: E2E Testing
+# 6. E2E Testing
 
 ## Overview
 
@@ -64,27 +64,3 @@ test('complete registration and login flow', async ({ page }) => {
   await expect(page).toHaveURL('/login');
 });
 ```
-
----
-
-## 6.5 E2E vs Unit/Integration Tests
-
-| Aspect | Unit/Integration | E2E |
-|--------|-----------------|-----|
-| Speed | Fast | Slow |
-| Setup | Simple (Jest) | Complex (browser setup) |
-| Flakiness | Low | Higher |
-| Coverage | Component-level | Full user journey |
-| Maintenance | Easier | Harder |
-
-**Strategy:** Use unit/integration tests for component logic, E2E for critical user flows only.
-
----
-
-## 6.6 When to Skip E2E
-
-- If time budget is tight
-- If unit/integration tests cover critical paths
-- If team lacks E2E testing expertise
-
-E2E testing is valuable but resource-intensive. Prioritize it after the core testing infrastructure is stable.
