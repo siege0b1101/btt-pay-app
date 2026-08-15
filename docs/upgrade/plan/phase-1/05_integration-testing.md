@@ -1,164 +1,168 @@
 # 5. Integration Testing
+
 ## Overview
 
-This phase covers the implementation of integration tests and API mocking using MSW (Mock Service Worker) to test component interactions, API calls, and state transitions.
+This phase covers integration tests using **MSW (Mock Service Worker)** to test component interactions with real API calls. **Consolidated into a single test file** covering all transaction forms via shared patterns.
 
 ---
 
 ## 5.1 Integration Tests
 
-**Focus:** Test component interactions, API calls, and state transitions.
+**Focus:** Test component interactions, real API calls (via MSW), and state transitions.
 
-### Example: Registration flow
+**Scope:** One file covering all 4 transaction types (Cash In, Transfer, Pay Bills, Buy Load) using a shared test template.
 
 ```javascript
-test('completes registration and redirects', async () => {
-  // Mock API to succeed
-  apiMock.api.post.mockResolvedValue({ data: { message: 'Registration successful' } });
-  
-  // Fill form and submit
-  fireEvent.change(screen.getByLabelText(/name/i), { target: { value: 'Test User' } });
-  fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'test@example.com' } });
-  fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'password123' } });
-  fireEvent.click(screen.getByText(/Register/i));
-  
-  // Verify modal appears
-  expect(screen.getByText(/Registration successful/i)).toBeInTheDocument();
-  
-  // Verify redirect
-  expect(navigate).toHaveBeenCalledWith('/');
-});
-```
+// src/__tests__/integration/transactions.integration.test.jsx
+import { expect, vi, describe, it, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { CashInForm } from '../../components/services/CashInForm';
+import { TransferCoinsForm } from '../../components/services/TransferCoinsForm';
+import { PayBillsForm } from '../../components/services/PayBillsForm';
+import { BuyLoadForm } from '../../components/services/BuyLoadForm';
+import { renderWithStore } from '../../test/utils';
+import { server, handlers } from '../../test/mocks/handlers';
 
-**Key points:**
-- Test complete user flows (registration, login, transactions)
-- Mock all API calls to avoid hitting real backend
-- Verify state transitions (loading → success/error)
-- Test modals and callbacks
+// Start MSW server
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterAll(() => server.close());
+afterEach(() => server.resetHandlers());
+
+const transactionForms = [
+  { name: 'CashInForm', component: CashInForm, fillForm: fillCashIn, submitText: /cash in/i },
+  { name: 'TransferCoinsForm', component: TransferCoinsForm, fillForm: fillTransfer, submitText: /transfer/i },
+  { name: 'PayBillsForm', component: PayBillsForm, fillForm: fillPayBills, submitText: /pay/i },
+  { name: 'BuyLoadForm', component: BuyLoadForm, fillForm: fillBuyLoad, submitText: /buy load/i },
+];
+
+describe('Transaction Forms Integration', () => {
+  transactionForms.forEach(({ name, component: Component, fillForm, submitText }) => {
+    describe(name, () => {
+      it('submits successfully and shows confirmation', async () => {
+        renderWithStore(<Component />);
+        fillForm();
+        fireEvent.click(screen.getByRole('button', { name: submitText }));
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument(); // Confirmation modal
+        });
+      });
+
+      it('shows error on API failure', async () => {
+        // Override handler for this test
+        server.use(
+          ...handlers,
+          http.post('/api/transactions', () => HttpResponse.json({ message: 'Insufficient balance' }, { status: 400 }))
+        );
+
+        renderWithStore(<Component />);
+        fillForm();
+        fireEvent.click(screen.getByRole('button', { name: submitText }));
+        await waitFor(() => {
+          expect(screen.getByText(/insufficient balance/i)).toBeInTheDocument();
+        });
+      });
+
+      it('shows loading state during submission', async () => {
+        let resolveRequest;
+        server.use(
+          ...handlers,
+          http.post('/api/transactions', () => new Promise(r => { resolveRequest = r; }))
+        );
+
+        renderWithStore(<Component />);
+        fillForm();
+        fireEvent.click(screen.getByRole('button', { name: submitText }));
+
+        expect(screen.getByRole('button', { name: /loading/i })).toBeDisabled();
+        resolveRequest(HttpResponse.json({ success: true }));
+        await waitFor(() => {
+          expect(screen.getByRole('dialog')).toBeInTheDocument();
+        });
+      });
+    });
+  });
+});
+
+// Form-specific fill helpers
+function fillCashIn() {
+  fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: '500' } });
+}
+
+function fillTransfer() {
+  fireEvent.change(screen.getByLabelText(/recipient/i), { target: { value: 'user@example.com' } });
+  fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: '100' } });
+}
+
+function fillPayBills() {
+  fireEvent.change(screen.getByLabelText(/biller/i), { target: { value: 'Meralco' } });
+  fireEvent.change(screen.getByLabelText(/account number/i), { target: { value: '123456789' } });
+  fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: '200' } });
+}
+
+function fillBuyLoad() {
+  fireEvent.change(screen.getByLabelText(/provider/i), { target: { value: 'Globe' } });
+  fireEvent.change(screen.getByLabelText(/amount/i), { target: { value: '50' } });
+}
+```
 
 ---
 
-## 5.2 Mocks and Test Data
+## 5.2 MSW Setup (Integration/E2E Only)
 
-**Focus:** Use MSW to intercept and mock all API requests without hitting the real backend.
+**Location:** `src/test/mocks/handlers.ts`
 
-### 5.2.1 Mocking API
-
-```javascript
-// src/__mocks__/api.js
-import { rest } from 'msw';
+```typescript
+import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 
-export const server = setupServer(
-  rest.post('/api/auth/login', (req, res, ctx) => {
-    return res(ctx.json({ token: 'mock-jwt-token', user: { id: 1, name: 'Test User' } }));
-  }),
-  rest.post('/api/auth/register', (req, res, ctx) => {
-    return res(ctx.json({ message: 'Registration successful' }));
-  }),
-  rest.post('/api/accounts', (req, res, ctx) => {
-    return res(ctx.json({ success: true, account: { id: 1, type: 'PAY', balance: 0 } }));
-  })
-);
+export const handlers = [
+  // Auth
+  http.post('/api/auth/login', () => HttpResponse.json({
+    token: 'mock-jwt-token',
+    user: { id: 1, name: 'Test User', email: 'test@example.com' }
+  })),
+  http.post('/api/auth/register', () => HttpResponse.json({ message: 'Registration successful' })),
+
+  // Accounts
+  http.post('/api/accounts', () => HttpResponse.json({ success: true, account: { id: 1, type: 'PAY', balance: 0 } })),
+  http.post('/api/accounts/user', () => HttpResponse.json({ accounts: [
+    { id: 1, type: 'PAY', balance: 1000 },
+    { id: 2, type: 'SAVINGS', balance: 5000 }
+  ]})),
+
+  // Transactions
+  http.post('/api/transactions', () => HttpResponse.json({ success: true })),
+  http.post('/api/transactions/account', () => HttpResponse.json({ transactions: [
+    { id: 1, type: 'CASH_IN', amount: 500, date: '2024-01-15T10:00:00+08:00' },
+    { id: 2, type: 'TRANSFER', amount: -100, date: '2024-01-16T14:30:00+08:00' },
+  ]})),
+];
+
+export const server = setupServer(...handlers);
 ```
 
-**Key points:**
-- Use `rest` handlers for all API endpoints
-- Setup server in test environment
-- Reset handlers before each test
-- Close server after each test
+**Usage in tests:**
+```typescript
+import { server, handlers } from '../../test/mocks/handlers';
+import { http, HttpResponse } from 'msw';
+
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterAll(() => server.close());
+afterEach(() => server.resetHandlers());
+
+// Override for specific test
+server.use(
+  ...handlers,
+  http.post('/api/transactions', () => HttpResponse.json({ message: 'Error' }, { status: 400 }))
+);
+```
 
 ---
 
-### 5.2.2 Mocking Router
+## 5.3 Key Points
 
-**Focus:** Mock React Router hooks to avoid actual routing during tests.
-
-#### Setup
-
-```javascript
-// src/__mocks__/@react-router-dom.js
-jest.mock('react-router-dom', () => ({
-  ...jest.requireActual('react-router-dom'),
-  useNavigate: () => jest.fn(),
-  useLocation: () => ({ pathname: '/' }),
-  useRoutes: () => null
-}));
-```
-
-**Key points:**
-- Mock `useNavigate` to return a jest function
-- Mock `useLocation` to return a static location
-- Mock `useRoutes` to return null (or your actual routes)
-
----
-
-### 5.2.3 Mocking Components (for isolation testing)
-
-```javascript
-// src/__tests__/__mocks__/mockComponents.js
-import React from 'react';
-
-export const MockTextField = ({ label, ...props }) => (
-  <div data-testid="text-field">
-    <label>{label}</label>
-    <input {...props} data-testid="input" />
-  </div>
-);
-
-export const MockButton = ({ children, ...props }) => (
-  <button {...props} data-testid="button">
-    {children}
-  </button>
-);
-
-export const MockModal = ({ title, children, onConfirm, onCancel }) => (
-  <div data-testid="modal-overlay">
-    <div data-testid="modal-content">
-      <h2 data-testid="modal-title">{title}</h2>
-      <p data-testid="modal-body">{children}</p>
-      <div data-testid="modal-actions">
-        <button data-testid="cancel-btn" onClick={onCancel}>Cancel</button>
-        <button data-testid="confirm-btn" onClick={onConfirm}>Confirm</button>
-      </div>
-    </div>
-  </div>
-);
-```
-
-**Key points:**
-- Create mock components for isolation testing
-- Use `data-testid` attributes for testing
-- **DO NOT** mock real components (Modal, Header, Sidebar, etc.)
-
-**Note:** Only create mock components when you need to test a component in complete isolation. For most tests, mock dependencies (API, hooks) instead.
-
----
-
-### 5.2.4 Test Data
-
-#### Example: User data
-
-```javascript
-// src/__tests__/__mocks__/user.js
-export const mockUser = {
-  id: 1,
-  name: 'Test User',
-  email: 'test@example.com',
-  phone: '+639123456789',
-  address: 'Manila, Philippines'
-};
-
-export const mockAdminUser = {
-  id: 2,
-  name: 'Admin User',
-  email: 'admin@example.com',
-  phone: '+639987654321',
-  address: 'Quezon City, Philippines',
-  role: 'admin'
-};
-```
-
-**Key points:**
-- Keep test data in `__mocks__` folder (same as MSW mocks)
-- Use realistic data that mirrors production
+- **MSW only for integration/E2E** — unit tests use `vi.mock('axios')` in `setup.ts`
+- **Single test file** for all transaction forms — shared patterns reduce duplication
+- **Test both success and error paths** for each form
+- **Verify loading states** during async submission
+- **Test modal confirm/cancel callbacks** execute correctly
