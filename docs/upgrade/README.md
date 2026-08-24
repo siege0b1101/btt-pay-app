@@ -11,24 +11,14 @@ This document outlines the upgrade plan for the BTT-Pay frontend application, fo
 
 ### Phase 1: Testing (Revised)
 
-| #   | Item                            | Reference                                                              | Status |
-| --- | ------------------------------- | ---------------------------------------------------------------------- | ------ |
-| 1   | **Tools & Setup (Vitest)**      | [01_testing-tools-and-setup.md](plan/phase-1/01_testing-tools-and-setup.md) | 📋 Planned |
-| 2   | **Test Structure Organization** | [02_test-structure-organization.md](plan/phase-1/02_test-structure-organization.md) | 📋 Planned |
-| 3   | **Test Scope & Coverage**       | [03_test-scope-and-coverage.md](plan/phase-1/03_test-scope-and-coverage.md) | 📋 Planned |
-| 4   | **Unit Testing**                | [04_unit-testing.md](plan/phase-1/04_unit-testing.md)                  | 📋 Planned |
-| 5   | **Integration Testing**         | [05_integration-testing.md](plan/phase-1/05_integration-testing.md)    | 📋 Planned |
-| 6   | **E2E Testing (Playwright)**    | [06_e2e-testing.md](plan/phase-1/06_e2e-testing.md)                    | 📋 Planned |
+**Plan:** [TESTING_PLAN.md](TESTING_PLAN.md)
 
 **Implementation Checklist:** [TEST_IMPLEMENTATION_CHECKLIST.md](impl/TEST_IMPLEMENTATION_CHECKLIST.md)
 
 ---
 ### Phase 2: Migration
 
-| #   | Item | Reference |
-| --- | ---- | --------- |
-| 1   | CRA → Vite Migration | TBA |
-| 2   | React 18 → 19 Upgrade | TBA |
+Migration considerations are covered in [TESTING_PLAN.md §6](TESTING_PLAN.md#6-migration-considerations-cra--vite-react-18--19).
 
 ---
 ## Key Decisions (Phase 1)
@@ -75,3 +65,4 @@ This document outlines the upgrade plan for the BTT-Pay frontend application, fo
 | 2       | 2026/07/25    | Pi + Me             | Added more details per plan document |
 | 3       | 2026/07/26    | Pi + Me             | Reorganize plan structure            |
 | 4       | 2026/08/15    | Pi + Me             | Switch to Vitest, lower Phase 1 targets, consolidate scope |
+| 5       | 2026/08/24    | Pi + Me             | Ponytail review: consolidate 6 plan docs into TESTING_PLAN.md, trim checklist to tracking-only (1,542 → 302 lines) |

@@ -30,8 +30,8 @@
 | **Date Handling** | date-fns-tz 1.3.7 |
 | **Auth** | JWT (jwt-decode 3.1.2) |
 | **Validation** | Custom validation rules |
-| **Testing** | Jest + React Testing Library (planned) |
-| **API Mocking** | MSW (Mock Service Worker) (planned) |
+| **Testing** | Vitest + React Testing Library (planned) |
+| **API Mocking** | `vi.mock('axios')` for unit; MSW for integration/E2E (planned) |
 
 ### Architecture
 
@@ -56,7 +56,7 @@ src/
 ```bash
 npm start    # Development server (port 3000)
 npm run build # Production build
-npm test     # Run tests (Jest)
+npm test     # Run tests (Vitest)
 ```
 
 ## Development Conventions
@@ -110,9 +110,9 @@ npm test     # Run tests (Jest)
 
 ### Testing Strategy (Planned)
 
-- **Unit tests**: Jest + React Testing Library
-- **API mocking**: MSW (Mock Service Worker)
-- **Coverage target**: 60% (branches, functions, lines, statements)
+- **Unit tests**: Vitest + React Testing Library
+- **API mocking**: `vi.mock('axios')` globally in `src/test/setup.ts`; MSW only for integration/E2E
+- **Coverage target**: global ≥50% in Phase 1, ≥60% in Phase 2+
 - **Critical paths**:
   - Login/Registration flow
   - Account creation
@@ -121,11 +121,10 @@ npm test     # Run tests (Jest)
   ```
   src/
   └── __tests__/
-      ├── components/
-      │   ├── general/
-      │   ├── layout/
-      │   └── services/
-      └── pages/
+      ├── unit/          # mirrors src/: components/, pages/, hooks/, adapters/, util/
+      ├── integration/   # one file: all 4 transaction forms
+      └── e2e/flows/     # Playwright, 3 critical flows
+  src/test/              # setup.ts, utils.tsx, mocks/handlers.ts
   ```
 
 ### Error Handling
@@ -175,17 +174,9 @@ npm test     # Run tests (Jest)
 **Planned Upgrade** (see `docs/upgrade/`):
 - React 18 → React 19
 - Create React App → Vite
-- Testing infrastructure (Jest, RTL, MSW)
+- Testing infrastructure (Vitest, RTL, Playwright; MSW for integration only)
 
-**Documentation**: `docs/upgrade/plan/` contains 8-phase upgrade plan:
-1. Test Strategy & Tooling Setup
-2. Test Structure Organization
-3. Test Priority & Coverage Targets
-4. Test Implementation Strategy
-5. Test Configuration
-6. E2E Testing
-7. CI/CD Integration
-8. Migration Considerations
+**Documentation**: `docs/upgrade/TESTING_PLAN.md` is the single plan doc (tools/setup, structure, unit/integration/E2E, migration notes). `docs/upgrade/impl/TEST_IMPLEMENTATION_CHECKLIST.md` tracks progress.
 
 ## Notes for New Contributors
 
@@ -260,8 +251,3 @@ npm test     # Run tests (Jest)
 - tailwindcss
 - autoprefixer
 - postcss
-
-## Project Location
-
-- **Repository**: `/Users/cjreblora/Projects/btt-pay/btt-pay-app`
-- **Parent**: `/Users/cjreblora/Projects/btt-pay/`
